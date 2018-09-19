@@ -1,0 +1,47 @@
+{
+  "name": "persistent-shell",
+  "version": "0.0.1",
+  "author": "cmp-202",
+  "description": "A wrapper class for ssh2 to run d persistent shell session",
+  "main": "./lib/persistent-shell.js",
+  "engines": {
+    "node": ">=4.5.0"
+  },
+  "dependencies": {
+    "ssh2": ">=0.5.0"
+  },
+  "devDependencies": {
+    "coffee-script": ">=1.10.0",
+    "dotenv": ">=2.0.0"
+  },
+  "scripts": {},
+  "keywords": [
+    "SSH",
+    "ssh2",
+    "shell",
+    "server",
+    "client",
+    "multiple",
+    "command",
+    "commands",
+    "persistant",
+    "host",
+    "automation",
+    "hash",
+    "cipher",
+    "persistent",
+    "sequential",
+    "console",
+    "session",
+    "connection"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/cmp-202/persistent-shell"
+  },
+  "bugs": {
+    "url": "https://github.com/cmp-202/persistent-shell/issues"
+  },
+  "homepage": "https://github.com/cmp-202/persistent-shell/wiki",
+  "license": "ISC"
+}
