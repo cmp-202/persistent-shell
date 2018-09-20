@@ -1,4 +1,4 @@
-persistant-shell
+Persistent-shell
 =========
 
 Wrapper class for [ssh2](https://www.npmjs.org/package/ssh2) client.shell command.
@@ -149,7 +149,7 @@ host = {
   
   //Optional: Command complete is raised when a standard prompt is detected after a command is sent.
   onCommandComplete:   function( command, response, host ) {
-   //response is the full string from the the last command up to the command propt.
+   //response is the full string from the last command up to the command prompt.
    //host is the host object.
   },
   
