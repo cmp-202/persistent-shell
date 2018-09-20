@@ -14,24 +14,27 @@ class SSH2Shell extends EventEmitter
    _buffer:          ""
    asciiFilter:      ""
    textColorFilter:  ""
+   stdin:        process.openStdin()
    onEnd:              =>
    pipe:  (destination)=>
       @_pipes.push(destination)
-      return @    
+      return @
    unpipe:             =>
    
    _processData: ( data )=>
       #add host response data to buffer
       @_buffer += data
-          
+      
       #remove test coloring from responses like [32m[31m
       unless @.sshObj.disableColorFilter        
-         @emit 'msg', "#{@sshObj.server.host}: text formatting filter: "+@sshObj.textColorFilter+", response is ok: "+@textColorFilter.test(@_buffer) if @sshObj.verbose
+         @emit 'msg', "#{@sshObj.server.host}: text formatting filter: 
+            "+@sshObj.textColorFilter+", response is ok: "+@textColorFilter.test(@_buffer) if @sshObj.verbose
          @_buffer = @_buffer.replace(@textColorFilter, "")
         
       #remove non-standard ascii from terminal responses
       unless @.sshObj.disableASCIIFilter
-         @emit 'msg', "#{@sshObj.server.host}: ASCII filter: "+@sshObj.asciiFilter+", response is ok: "+@asciiFilter.test(@_buffer) if @sshObj.verbose
+         @emit 'msg', "#{@sshObj.server.host}: ASCII filter: "+@sshObj.asciiFilter+", response is ok: 
+            "+@asciiFilter.test(@_buffer) if @sshObj.verbose
          @_buffer = @_buffer.replace(@asciiFilter, "")
            
       if @command.length > 0 and @standardPromt.test(@_buffer.replace(@command.substr(0, @_buffer.length), ""))
@@ -41,33 +44,37 @@ class SSH2Shell extends EventEmitter
       else if @command.length < 1 and @standardPromt.test(@_buffer)
          @emit 'msg', "#{@sshObj.server.host}: First prompt detected" if @sshObj.debug
          if @sshObj.showBanner
+            process.stdout.write (@_buffer)
             @sshObj.sessionText += @_buffer
             @_buffer = ""
          else
             @_buffer = ""
-       
-   _commandComplete: =>    
+         
+   _commandComplete: =>
       response = @_buffer.replace(@command, "")
 
       @.emit 'msg', "#{@sshObj.server.host}: Command complete:\nCommand:\n #{@command}\nResponse: #{response}" if @sshObj.verbose
+      @.emit 'msg', response
       #load the full buffer into sessionText and raise a commandComplete event
-
       @sshObj.sessionText += response
       @_buffer = ""
       @.emit 'msg', "#{@sshObj.server.host}: Raising commandComplete event" if @sshObj.debug
-      @.emit 'commandComplete', @command, response 
+      @.emit 'commandComplete', @command, response
          
    runCommand: (@command) =>
       @.emit 'msg', "#{@sshObj.server.host}: running: #{@command}" if @sshObj.verbose
       @_stream.write "#{@command}#{@sshObj.enter}"
+      if @command == "exit"
+         @exit()
    
    exit: =>
       @.emit 'msg', "#{@sshObj.server.host}: Exit command: Stream: close" if @sshObj.debug
+      @stdin.end()
       @_stream.close() #"exit#{@sshObj.enter}"
       
    _loadDefaults: =>
       @sshObj.msg = { send: ( message ) =>
-         console.log message
+         process.stdout.write  message
       } unless @sshObj.msg
       @sshObj.connectedMessage  = "Connected" unless @sshObj.connectedMessage
       @sshObj.readyMessage      = "Ready" unless @sshObj.readyMessage
@@ -91,26 +98,27 @@ class SSH2Shell extends EventEmitter
       @_callback                = @sshObj.callback if @sshObj.callback
       @_pipes                   = []
 
-      @onCommandComplete        = @sshObj.onCommandComplete ? ( command, response ) =>
-         @.emit 'msg', "#{@sshObj.server.host}: Class.commandComplete" if @sshObj.debug
+      @onCommandComplete        = @sshObj.onCommandComplete ? ( response ) =>
+         @.emit 'msg', "#{@sshObj.server.host}: ClasscommandComplete" if @sshObj.debug
 
       @onEnd                    = @sshObj.onEnd ? ( sessionText, sshObj ) =>
          @.emit 'msg', "#{@sshObj.server.host}: Class.end" if @sshObj.debug
 
-      @.on "commandComplete", @onCommandComplete  
+      @.on "commandComplete", @onCommandComplete
       @.on "end", @onEnd
     
    constructor: (host) ->
       @sshObj = host
-      @connection = new require('ssh2')()    
+      @connection = new require('ssh2')()
     
    _initiate: =>
       @.emit 'msg', "#{@sshObj.server.host}: initiate" if @sshObj.debug
-      @_loadDefaults()    
-      #event handlers        
+      @_loadDefaults()
+      #event handlers
       @.on "keyboard-interactive", ( name, instructions, instructionsLang, prompts, finish ) =>
          @.emit 'msg', "#{@sshObj.server.host}: Class.keyboard-interactive" if @sshObj.debug
-         @.emit 'msg', "#{@sshObj.server.host}: Keyboard-interactive: finish([response, array]) not called in class event handler." if @sshObj.debug
+         @.emit 'msg', "#{@sshObj.server.host}: Keyboard-interactive: 
+            finish([response, array]) not called in class event handler." if @sshObj.debug
          if @sshObj.verbose
             @.emit 'msg', "name: " + name
             @.emit 'msg', "instructions: " + instructions
@@ -128,7 +136,9 @@ class SSH2Shell extends EventEmitter
          else
             @.emit 'msg', "#{type} error: " + err
             callback(err, type) if callback
-            @connection.end() if close
+            if close 
+               @connection.end() 
+               @stdin.end()
 
       @.on "pipe", @sshObj.onPipe ? (source) =>
          @.emit 'msg', "#{@sshObj.server.host}: Class.pipe" if @sshObj.debug
@@ -141,6 +151,11 @@ class SSH2Shell extends EventEmitter
 
       @.on "stderrData", @sshObj.onStderrData ? (data) =>
          console.error data
+         
+      #Start console listener
+      @stdin.addListener "data", (input)  =>
+            @command = input.toString().trim()            
+            @.runCommand @command
         
    connect: (callback)=>
       @_callback = callback if callback
@@ -160,47 +175,47 @@ class SSH2Shell extends EventEmitter
          @.emit 'msg', "#{@sshObj.server.host}: Connection.ready" if @sshObj.debug
          @.emit 'msg', @sshObj.readyMessage
 
-      #open a shell
-      @connection.shell @sshObj.window, { pty: @sshObj.pty }, (err, @_stream) =>
-         if err then @.emit 'error', err, "Shell", true
-         @.emit 'msg', "#{@sshObj.server.host}: Connection.shell" if @sshObj.debug
-         @sshObj.sessionText = "Connected to #{@sshObj.server.host}#{@sshObj.enter}"
-         @_stream.setEncoding(@sshObj.streamEncoding);
-          
-         @_stream.pipe pipe for pipe in @_pipes
-         @.unpipe = @_stream.unpipe
-         
-         @_stream.on "error", (err) =>
-            @.emit 'msg', "#{@sshObj.server.host}: Stream.error" if @sshObj.debug
-            @.emit 'error', err, "Stream"
-
-         @_stream.stderr.on 'data', (data) =>              
-            @.emit 'msg', "#{@sshObj.server.host}: Stream.stderr.data" if @sshObj.debug
-            @.emit 'stderrData', data
-        
-         @_stream.on "data", (data)=>
-            try
-               @.emit 'data', data
-               @_processData( data )
-            catch e
-               err = new Error("#{e} #{e.stack}")
-               err.level = "Data handling"
-               @.emit 'error', err, "Stream.read", true
+         #open a shell
+         @connection.shell @sshObj.window, { pty: @sshObj.pty }, (err, @_stream) =>
+            if err then @.emit 'error', err, "Shell", true
+            @.emit 'msg', "#{@sshObj.server.host}: Connection.shell" if @sshObj.debug
+            @sshObj.sessionText = "Connected to #{@sshObj.server.host}#{@sshObj.enter}"
+            @_stream.setEncoding(@sshObj.streamEncoding);
              
-         @_stream.on "pipe", (source)=>
-            @.emit 'pipe', source
+            @_stream.pipe pipe for pipe in @_pipes
+            @.unpipe = @_stream.unpipe
          
-         @_stream.on "unpipe", (source)=>
-            @.emit 'unpipe', source
+            @_stream.on "error", (err) =>
+               @.emit 'msg', "#{@sshObj.server.host}: Stream.error" if @sshObj.debug
+               @.emit 'error', err, "Stream"
+
+            @_stream.stderr.on 'data', (data) =>
+               @.emit 'msg', "#{@sshObj.server.host}: Stream.stderr.data" if @sshObj.debug
+               @.emit 'stderrData', data
            
-         @_stream.on "finish", =>
-            @.emit 'msg', "#{@sshObj.server.host}: Stream.finish" if @sshObj.debug
-            @.emit 'end', @sshObj.sessionText, @sshObj
-            @_callback @sshObj.sessionText if @_callback
-           
-         @_stream.on "close", (code, signal) =>                          
-            @.emit 'msg', "#{@sshObj.server.host}: Stream.close" if @sshObj.debug
-            @connection.end()
+            @_stream.on "data", (data)=>
+               try
+                  @.emit 'data', data
+                  @_processData( data )
+               catch e
+                  err = new Error("#{e} #{e.stack}")
+                  err.level = "Data handling"
+                  @.emit 'error', err, "Stream.read", true
+                
+            @_stream.on "pipe", (source)=>
+               @.emit 'pipe', source
+            
+            @_stream.on "unpipe", (source)=>
+               @.emit 'unpipe', source
+              
+            @_stream.on "finish", =>
+               @.emit 'msg', "#{@sshObj.server.host}: Stream.finish" if @sshObj.debug
+               @.emit 'end', @sshObj.sessionText, @sshObj
+               @_callback @sshObj.sessionText if @_callback
+              
+            @_stream.on "close", (code, signal) =>
+               @.emit 'msg', "#{@sshObj.server.host}: Stream.close" if @sshObj.debug
+               @connection.end()
        
       @connection.on "error", (err) =>
          @.emit 'msg', "#{@sshObj.server.host}: Connection.error" if @sshObj.debug
@@ -208,13 +223,10 @@ class SSH2Shell extends EventEmitter
        
       @connection.on "close", (had_error) =>
          @.emit 'msg', "#{@sshObj.server.host}: Connection.close" if @sshObj.debug
-         clearTimeout @sshObj.idleTimer if @sshObj.idleTimer
          if had_error
             @.emit "error", had_error, "Connection close"
          else
             @.emit 'msg', @sshObj.closedMessage
-         if @hosts.length > 0
-            @_nextPrimaryHost()
          
       if @sshObj.server
          try
@@ -243,9 +255,10 @@ class SSH2Shell extends EventEmitter
                compress:         @sshObj.server.compress
                debug:            @sshObj.server.debug
          catch e
-            @.emit 'error', "#{e} #{e.stack}", "Connection.connect", true        
+            @.emit 'error', "#{e} #{e.stack}", "Connection.connect", true
       else
          @.emit 'error', "Missing connection parameters", "Parameters", false, ( err, type, close ) ->
+            @.removeListener 'data', @onCommandProcessing
             @.emit 'msg', @sshObj.server
             
       return @_stream
