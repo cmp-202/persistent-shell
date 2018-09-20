@@ -1,23 +1,36 @@
-var host = {
-  server: {     
-    host:         "192.168.0.117",
-    port:         "22",
-    userName:     "user",
-    password:     "jaed1ygd"
-  },
-  debug:          false,
-  verbose:        false
-};
+//Terminal persistent shell connection.
 
-host.command = ""
-//var SSH2Shell = require ('ssh2shell');
-var SSH2Shell = require ('../lib/persistent-shell');
+var persistentShell = require ('../lib/persistent-shell'),
+    host = {
+      server: {     
+        host:         "192.168.0.117",
+        port:         "22",
+        userName:     "user",
+        password:     "jaed1ygd"
+      },
+      debug:          false,
+      verbose:        false,
+      stdin:          process.openStdin()
+   };
 
-//run the commands in the shell session
-var SSH = new SSH2Shell(host),
-    callback = function( sessionText ){
-          console.log ( "-----Callback session text:\n" + sessionText);
-          console.log ( "-----Callback end" );
+//Create new instance
+var session = new persistentShell(host),
+   callback = function( sessionText ){
+         this.emit("info", "-----Callback\nSession text:\n\n" + sessionText);
+         this.emit("info", "\n\n-----Callback end" );
+   }
+      
+//Start console data event handler
+session.host.stdin.addListener("data", function(input){
+      var command = input.toString().trim();
+      if (command == "exit"){
+         session.host.stdin.end();
+         session.exit();
+      }else {
+         session.runCommand(command);
       }
+})
 
-SSH.connect(callback)
+//Make connection
+session.connect(callback)
+
