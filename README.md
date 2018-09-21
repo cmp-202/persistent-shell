@@ -48,7 +48,7 @@ persistent-shell extends events.EventEmitter
 
 * .runCommand ("command") self explanertry.
 
-* .exit() Required to terminate both streams and close the instance.
+* .exit() used to close the session.
 
 * .emit("eventName", function, parms,... ). Raises the event based on the name in the first string and takes input
   parameters based on the handler function definition.
@@ -153,9 +153,8 @@ host = {
    //host is the host object.
   },
   
-  //Recommended: The end event is raised when the stream.on ("finish") event is triggered as the 
-  //connection is closed or when any nested host connection is closed. 
-  //This is where you handle the full session text from the connection.
+  //Optional: The end event is raised when the stream.on ("finish") event is triggered as the 
+  //connection is closed. This is where you handle the full session text from the connection.
   onEnd:               function( sessionText, host ) {
    //SessionText is the full text for this hosts session   
    //host is this host object
