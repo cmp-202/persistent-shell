@@ -57,7 +57,16 @@ class SSH2Shell extends EventEmitter
       @_buffer = ""
       @.emit 'info', "#{@host.server.host}: Raising commandComplete event" if @host.debug
       @.emit 'commandComplete', @command, response
-         
+      if typeIsArray(@sshObj.commands) and @sshObj.commands.length > 0
+         @_nextCommand()
+
+   _nextCommand: =>
+      #process the next command if there are any      
+      @.emit 'msg', "#{@sshObj.server.host}: Host.commands: #{@sshObj.commands}" if @sshObj.verbose      
+      @.emit 'msg', "#{@sshObj.server.host}: Next command from host.commands: #{@command}" if @sshObj.verbose
+      command = @sshObj.commands.shift()
+      @runCommand command
+
    runCommand: (@command) =>
       @.emit 'info', "#{@host.server.host}: running: #{@command}" if @host.verbose
       @_stream.write "#{@command}#{@host.enter}"
