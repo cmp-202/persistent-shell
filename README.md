@@ -148,14 +148,14 @@ host = {
   },
   
   //Optional: Command complete is raised when a standard prompt is detected after a command is sent.
-  onCommandComplete:   function( command, response, host ) {
+  onCommandComplete:   function( command, response ) {
    //response is the full string from the last command up to the command prompt.
    //host is the host object.
   },
   
   //Optional: The end event is raised when the stream.on ("finish") event is triggered as the 
   //connection is closed. This is where you handle the full session text from the connection.
-  onEnd:               function( sessionText, host ) {
+  onEnd:               function( sessionText ) {
    //SessionText is the full text for this hosts session   
    //host is this host object
   },

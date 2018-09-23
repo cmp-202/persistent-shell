@@ -57,14 +57,14 @@ class SSH2Shell extends EventEmitter
       @_buffer = ""
       @.emit 'info', "#{@host.server.host}: Raising commandComplete event" if @host.debug
       @.emit 'commandComplete', @command, response
-      if typeIsArray(@sshObj.commands) and @sshObj.commands.length > 0
+      if typeIsArray(@host.commands) and @host.commands.length > 0
          @_nextCommand()
 
    _nextCommand: =>
       #process the next command if there are any      
-      @.emit 'msg', "#{@sshObj.server.host}: Host.commands: #{@sshObj.commands}" if @sshObj.verbose      
-      @.emit 'msg', "#{@sshObj.server.host}: Next command from host.commands: #{@command}" if @sshObj.verbose
-      command = @sshObj.commands.shift()
+      @.emit 'msg', "#{@host.server.host}: Host.commands: #{@host.commands}" if @host.verbose      
+      @.emit 'msg', "#{@host.server.host}: Next command from host.commands: #{@command}" if @host.verbose
+      command = @host.commands.shift()
       @runCommand command
 
    runCommand: (@command) =>
@@ -78,8 +78,7 @@ class SSH2Shell extends EventEmitter
       @_stream.close() #"exit#{@host.enter}"
       
    _loadDefaults: =>
-      
-      
+      @host.commands        = [] unless @host.commands
       @host.connectedMessage  = "Connected" unless @host.connectedMessage
       @host.readyMessage      = "Ready" unless @host.readyMessage
       @host.closedMessage     = "Closed" unless @host.closedMessage
@@ -102,10 +101,10 @@ class SSH2Shell extends EventEmitter
       @_callback                = @host.callback if @host.callback
       @_pipes                   = []
 
-      @onCommandComplete        = @host.onCommandComplete ? ( response ) =>
-         @.emit 'info', "#{@host.server.host}: ClasscommandComplete" if @host.debug
+      @onCommandComplete        = @host.onCommandComplete ? ( command, response ) =>
+         @.emit 'info', "#{@host.server.host}: Class commandComplete" if @host.debug
 
-      @onEnd                    = @host.onEnd ? ( sessionText, host ) =>
+      @onEnd                    = @host.onEnd ? ( sessionText ) =>
          @.emit 'info', "#{@host.server.host}: Class.end" if @host.debug
 
       @.on "commandComplete", @onCommandComplete
