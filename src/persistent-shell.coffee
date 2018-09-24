@@ -15,11 +15,11 @@ class SSH2Shell extends EventEmitter
    _firstPrompt:      true
    asciiFilter:      ""
    textColorFilter:  ""
-   onEnd:              =>
+   onEnd:            =>
    pipe:  (destination)=>
       @_pipes.push(destination)
       return @
-   unpipe:             =>
+   unpipe:           =>
    
    _processData: ( data )=>
       #remove test coloring from responses like [32m[31m
@@ -67,18 +67,25 @@ class SSH2Shell extends EventEmitter
       command = @host.commands.shift()
       @runCommand command
 
-   runCommand: (@command) =>
-      @.emit 'info', "#{@host.server.host}: running: #{@command}" if @host.verbose
-      @_stream.write "#{@command}#{@host.enter}"
-      if @command == "exit"
-         @exit()
+   runCommand: (command) =>
+      if typeIsArray(command) 
+         @host.commands = command
+         @_nextCommand
+      else
+         if @command == "exit"
+            @exit()
+         @.emit 'info', "#{@host.server.host}: running: #{@command}" if @host.verbose
+         @command = command
+         @_stream.write "#{@command}#{@host.enter}"
+         
+      
    
    exit: =>
       @.emit 'info', "#{@host.server.host}: Exit command: Stream: close" if @host.debug
       @_stream.close() #"exit#{@host.enter}"
       
    _loadDefaults: =>
-      @host.commands        = [] unless @host.commands
+      @host.commands          = [] unless @host.commands
       @host.connectedMessage  = "Connected" unless @host.connectedMessage
       @host.readyMessage      = "Ready" unless @host.readyMessage
       @host.closedMessage     = "Closed" unless @host.closedMessage
@@ -129,14 +136,14 @@ class SSH2Shell extends EventEmitter
             @.emit 'info', "instructions: " + instructions
             str = JSON.stringify(prompts, null, 4)
             @.emit 'info', "Prompts object: " + str
-      @host.onKeyboardInteractive name, instructions, instructionsLang, prompts, finish if @host.onKeyboardInteractive
+         @host.onKeyboardInteractive name, instructions, instructionsLang, prompts, finish if @host.onKeyboardInteractive
 
       #terminal output doesn't want a `\n` but process info messages do.
       @.on "msg", @host.msg  ?  ( message ) =>
          process.stdout.write  message
          
-      @.on "info", @host.info ?  ( message ) =>
-         process.stdout.write  message + @host.enter
+      @.on "info", ( message ) =>
+         @.emit 'msg', message + @host.enter
          
       @.on "error", @host.onError ? (err, type, close = false, callback) =>
          @.emit 'info', "#{@host.server.host}: Class.error" if @host.debug

@@ -24,6 +24,7 @@ var host = {
 };
 
 var persistent-shell = require ('persistent-shell'),
+
   //Create a new instance passing in the host object
   shell = new persistent-shell(host),
   
@@ -34,54 +35,72 @@ var persistent-shell = require ('persistent-shell'),
 
 //Start the process
 shell.connect(callback);
+
+//Your app calls `this.runCommand(command)` as required and `this.exit()` when finished.
 ``` 
 
-persistent-shell API
--------------
-persistent-shell extends events.EventEmitter
 
+API
+---
 
-*Methods*
+#### Properties:
+`this.host`      is the host object passed to the constructor.
+`this.connection` is the ssh2 connection client.
+`this.commands`  (optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
 
-* .connect(callback(sessionText)) Is the main function to establish the connection. 
-   It take in an optional callback function that receives the full session text as its parameter.
+#### Commands:
+`Instance = new persistentShell(host)` requires the host object defined above.
+`this.connect(callback)` Connects using host.server properties running the callback when finished. Callback is optional
+`callback = function(sessionText){//Runs after everything has closed allowing you to process the full session});`
+`this.runCommand(command/s)` takes either a command string or an array of commands, in eaither case runs selected command.
 
-* .runCommand ("command") self explanertry.
+#### Event Handlers: (All optional)
+`this.on("pipe",function(source){})` Allows you to bind a write stream to the connection shell stream read
 
-* .exit() used to close the session.
+`this.on("unpipe", function(source){})` Runs when a pipe is removed.
 
-* .emit("eventName", function, parms,... ). Raises the event based on the name in the first string and takes input
-  parameters based on the handler function definition.
-  
-* .pipe(destination) binds a writable stream to the output of the read stream but only after the connection is established.
+`this.on("data", function(data){})` Runs every time data is received from the host.
 
-* .unpipe(destination) removes piped streams but can only be called after a connection has been made.
+`this.on("commandComplete", function(command, response){})` Runs when a prompt is detected after a command is sent.
 
-*Variables*
+`this.on("end", function (sessionText){})` Runs when the stream/connection is being closed.
 
-* .host is the host object as defined above along with some instance variables.
+`this.on("msg", function(message){})` Output the message but with no carrage return. e.g. raw data received.
+
+`this.on("error", function(err, type, close = false, callback){})` Runs when an error occures.
+
+`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`. 
+            //Requires `host.server.tryKeyboard` to be set.
+
 
 Host Configuration:
 ------------
 
 persistent-shell expects an object with the following structure to be passed to its constructor:
+Note: default values are provided
+
+
 ```javascript
 //Host object
+
 host = {
   server:              { 
     //required connection settings
     host:         "IP Address",
     port:         "external port number",
     userName:     "user name",
-    //optional or required settings subject to authentication method used
     password:     "user password",
     passPhrase:   "privateKeyPassphrase",
-    privateKey:   require('fs').readFileSync('/path/to/private/key/id_rsa'),
+    privateKey:   require('fs').readFileSync('/path/to/private/key/id_rsa')
+    
     //Optional: ssh2.connect config parameters
     //See https://github.com/mscdex/ssh2#client-methods
     //ssh2.connect parameters are only valid for the first host connection.
     //Other host connections use the ssh command/s to connect not ssh2.
   },
+  //optional commands array which can be added but passing it through `.runCommand([array of commands]);`
+  commands:           [],
+  
   //Optional: Characters used in prompt detection
   standardPrompt:     ">$%#",
   passwordPrompt:     ":",
@@ -103,8 +122,7 @@ host = {
   textColorFilter:    "(\[{1}[0-9;]+m{1})", //removes colour formatting codes
   
   //Optional: Used by this.emit("msg", "message") or this.emit("info", "message")
-  msg:                function( message ) { process.stdout.write(message)}, 
-  info:               function( message ) { process.stdout.write(message + this.host.enter)},
+  msg:                function( message ) { default: process.stdout.write(message)},
   
   //Optional: Trouble shooting options
   verbose:             false,  //outputs all received content
