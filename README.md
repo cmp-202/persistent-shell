@@ -1,4 +1,4 @@
-Persistent-shell
+persistent-shell
 =========
 
 Wrapper class for [ssh2](https://www.npmjs.org/package/ssh2) client.shell command.
@@ -45,13 +45,18 @@ API
 
 #### Properties:
 `this.host`      is the host object passed to the constructor.
+
 `this.connection` is the ssh2 connection client.
+
 `this.commands`  (optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
 
 #### Commands:
 `Instance = new persistentShell(host)` requires the host object defined above.
-`this.connect(callback)` Connects using host.server properties running the callback when finished. Callback is optional
-`callback = function(sessionText){//Runs after everything has closed allowing you to process the full session});`
+
+`this.connect(callback)` Connects using host.server properties running the callback when finished. Callback is optional.
+
+`callback = function(sessionText){//Runs after everything has closed allowing you to process the full session});`.
+
 `this.runCommand(command/s)` takes either a command string or an array of commands, in eaither case runs selected command.
 
 #### Event Handlers: (All optional)
@@ -277,6 +282,7 @@ Authentication:
 Default Cyphers:
 ---------------
 Default Cyphers and Keys used in the initial ssh connection can be redefined by setting the ssh2.connect.algorithms through the host.server.algorithms option. 
+
 As with this property all ssh2.connect properties are set in the host.server object.
 
 *Example:*
