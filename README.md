@@ -60,6 +60,7 @@ API
 `this.runCommand(command/s)` takes either a command string or an array of commands, in eaither case runs selected command.
 
 #### Event Handlers: (All optional)
+`this.on(
 `this.on("pipe",function(source){})` Allows you to bind a write stream to the connection shell stream read
 
 `this.on("unpipe", function(source){})` Runs when a pipe is removed.
@@ -152,6 +153,8 @@ host = {
     //See [Client events](https://github.com/mscdex/ssh2#client-events) for more information
     //if a non-standard prompt results from a successful connection then handle its 
   },
+  //Optional: identifies when the stream is available and the first prompt is ready for input.
+  onFirstPrompt: function(){}
   
   //Optional: data is triggered on every stream data event providing the raw stream output 
   onData: function( data ) {
