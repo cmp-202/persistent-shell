@@ -44,7 +44,7 @@ class SSH2Shell extends EventEmitter
       #check for no command but first prompt detected
       else if @_firstPrompt and @standardPromt.test(@_buffer)
          @emit 'info', "#{@host.server.host}: First prompt detected" if @host.debug
-         @emit 'firstPrompt', =>
+         @emit 'firstPrompt'
          @_firstPrompt = false;
          @host.sessionText += @_buffer if @host.showBanner
          @_buffer = ""
@@ -198,8 +198,6 @@ class SSH2Shell extends EventEmitter
              
             @_stream.pipe pipe for pipe in @_pipes
             @.unpipe = @_stream.unpipe
-            
-            @.emit 'shell'
             
             @_stream.on "error", (err) =>
                @.emit 'info', "#{@host.server.host}: Stream.error" if @host.debug

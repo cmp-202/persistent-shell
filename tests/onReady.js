@@ -1,4 +1,4 @@
-//Terminal persistent shell connection.
+//Terminal persistent shell connection automated.
 
 var persistentShell = require ('../lib/persistent-shell'),
    host = {
