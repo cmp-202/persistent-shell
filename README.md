@@ -1,8 +1,10 @@
 persistent-shell
 =========
 
-Wrapper class for [ssh2](https://www.npmjs.org/package/ssh2) client.shell command.
- 
+_Wrapper class for [ssh2](https://www.npmjs.org/package/ssh2) client.shell command._
+
+The package allows for user/program/interface to run commands without disconnecting each time.
+
  
 Installation:
 ------------
@@ -68,8 +70,6 @@ _`callback = function(sessionText){}`_. Runs after everything has closed allowin
 
 
 #### Event Handlers: (All optional)
-
-_`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
 
 _`this.on("pipe",function(source){})`_ Allows you to bind a write stream to the shell stream.
 
@@ -157,10 +157,10 @@ __Terminal persistent shell connection.__
 var persistentShell = require('persistent-shell'),
     host = {
       server: {     
-        host:         "192.168.0.117",
+        host:         "192.168.0.1",
         port:         "22",
         userName:     "user",
-        password:     "jaed1ygd"
+        password:     "password"
       },
       debug:          false,
       verbose:        false,
