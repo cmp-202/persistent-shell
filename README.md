@@ -47,173 +47,96 @@ API
 
 #### Properties:
 
-`this.host`      is the host object passed to the constructor.
+_`this.host`_ Is the host object passed to the constructor.
 
-`this.connection` is the ssh2 connection client.
+_`this.connection`_ Is the ssh2 connection client.
 
-`this.commands`  (optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
+_`this.commands`_ (Optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
 
 
 #### Commands:
 
-`Instance = new persistentShell(host)` requires the host object defined above.
+_`Instance = new persistentShell(host)`_ requires the host object defined above.
 
-`this.connect(callback)` Connects using host.server properties running the callback when finished. Callback is optional.
+_`this.connect(callback)`_ Connects using host.server properties running the callback when finished. Callback is optional.
 
-`callback = function(sessionText){//Runs after everything has closed allowing you to process the full session});`.
+_`callback = function(sessionText){}`_. Runs after everything has closed allowing you to process the full session
 
-`this.runCommand(command/s)` takes either a command string or an array of commands, in eaither case runs selected command.
+_`this.runCommand(command/s)`_ takes either a command string or an array of commands, in eaither case runs selected command.
 
 
 #### Event Handlers: (All optional)
 
-`this.on("unpipe", function(source){})` Runs when a pipe is removed.
+_`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
 
-`this.on("pipe",function(source){})` Allows you to bind a write stream to the connection shell stream read
+_`this.on("pipe",function(source){})`_ Allows you to bind a write stream to the connection shell stream read
 
-`this.on("unpipe", function(source){})` Runs when a pipe is removed.
+_`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
 
-`this.on("data", function(data){})` Runs every time data is received from the host.
+_`this.on("data", function(data){})`_ Runs every time data is received from the host.
 
-`this.on("commandProcessing", function(response){})` Runs with each data event before a prompt is detected.
+_`this.on("commandProcessing", function(response){})`_ Runs with each data event before a prompt is detected.
 
-`this.on("commandComplete", function(response){})` Runs when a prompt is detected after a command is sent.
+_`this.on("commandComplete", function(response){})`_ Runs when a prompt is detected after a command is sent.
 
-`this.on("end", function (sessionText){})` Runs when the stream/connection is being closed.
+_`this.on("end", function (sessionText){})`_ Runs when the stream/connection is being closed.
 
-`this.on("msg", function(message){})` Output the message but with no carrage return. e.g. raw data received.
+_`this.on("msg", function(message){})`_ Output the message but with no carrage return. e.g. raw data received.
 
-`this.on("error", function(err, type, close = false, callback){})` Runs when an error occures.
+_`this.on("error", function(err, type, close = false, callback){})`_ Runs when an error occures.
 
-`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`. 
-            //Requires `host.server.tryKeyboard` to be set.
+_`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`_ keyboard-interactive requires host.server.tryKeyboard to be set.
 
 
 Host Configuration:
 ------------
 
 persistent-shell expects an object with the following structure to be passed to its constructor:
-Note: default values are provided
+
+__*Note:* Any property or event handler with a default value does not need to be added
+to your host object unless you want to change it.__
 
 
 ```javascript
-//Host object
 
 host = {
-  server:              { 
-    //required connection settings
-    host:         "IP Address",
-    port:         "external port number",
-    userName:     "user name",
-    password:     "user password",
-    passPhrase:   "privateKeyPassphrase",
-    privateKey:   require('fs').readFileSync('/path/to/private/key/id_rsa')
-    
-    //Optional: ssh2.connect config parameters
-    //See https://github.com/mscdex/ssh2#client-methods
-    //ssh2.connect parameters are only valid for the first host connection.
-    //Other host connections use the ssh command/s to connect not ssh2.
-  },
-  //optional commands array which can be added but passing it through `.runCommand([array of commands]);`
-  commands:           [],
-  
-  //Optional: Characters used in prompt detection
-  standardPrompt:     ">$%#",
-  passwordPrompt:     ":",
-  passphrasePrompt:   ":",
-  
-  //Optional: exclude or include host banner after connection and window size 
-  showBanner:         false,
-  window:             false, //https://github.com/mscdex/ssh2#pseudo-tty-settings use {cols:200}
-  
-  //Optional: Enter key character for end of line.
-  enter:              "\n",
-  
-  //Optional: stream encoding
-  streamEncoding:     "utf8",
-  
-  //Optional: Regular expressions to filter output text
-  asciiFilter:        "[^\r\n\x20-\x7e]", //removes non-standard ASCII
-  disableColorFilter:  false, //turns colour filtering on and off
-  textColorFilter:    "(\[{1}[0-9;]+m{1})", //removes colour formatting codes
-  
-  //Optional: Used by this.emit("msg", "message") or this.emit("info", "message")
-  msg:                function( message ) { default: process.stdout.write(message)},
-  
-  //Optional: Trouble shooting options
-  verbose:             false,  //outputs all received content
-  debug:               false,  //outputs information about each process step
-  
-  //Optional: Messages returned on each connection event.
-  connectedMessage:    "Connected",
-  readyMessage:        "Ready",
-  closedMessage:       "Closed",
-  
-  //Host event handlers 
-  
-  //Optional: identifies when the stream is available and the first prompt is ready for input.
-  onFirstPrompt: function(){},
-  
-  //Optional: data is triggered on every stream data event providing the raw stream output 
-  onData: function( data ) {
-    //data is the string received.
-  },
-  
-  //Optional: The pipe event is raised when readStream.pipe() adds a writeable stream.
-  onPipe: function( source ) {
-    //source is the read stream the write stream will receive output from
-  },
-  
-  //Optional: The unpipe event is raised when readStream.unpipe() removes a write stream.
-  onUnpipe: function( source ) {
-    //source is the read stream to remove from being able to write its output.
-  },
-  
-  //Optional: Command processing is raised for data events where a standard prompt is not detected.
-  onCommandProcessing:   function( response ) {
-   //response is the full string from the last command up to the command prompt.
-  },
-  
-  //Optional: Command complete is raised when a standard prompt is detected after a command is sent.
-  onCommandComplete:   function( response ) {
-   //response is the full string from the last command up to the command prompt.
-  },
-  
-  //Optional: The end event is raised when the stream.on ("finish") event is triggered as the 
-  //connection is closed. This is where you handle the full session text from the connection.
-  onEnd:               function( sessionText ) {
-   //SessionText is the full text for this hosts session   
-   //host is this host object
-  },
-    
-  //Optional: Run when an error event is raised be it connection or otherwise.
-  onError:            function( err, type, close = false, callback ) {
-   //err is either an Error object or a string containing the error message
-   //type is a string containing the error type
-   //close is a Boolean value indicating if the connection should be closed or not
-   //callback is the function to run with handling the error in the form of function(err,type)
-   //if overwriting the default definition remember to handle closing the connection based on close
-   //To close the connection us this.connection.close()
-  },
-  
-  //Optional: callback function definition called when the stream closes
-  callback:           function( sessionText ){
-    //sessionText is the full session response filtered and notifications added
-    //Is overridden by persistent-shell.connect(callback)
-  },
-  
-  //Optional: Keyboard interactive authentication event handler
-      //This event is only used for the first host connecting through ssh2.connect
-      //Required if the first host.server.tryKeyboard is set to true. 
-  onKeyboardInteractive: function(name, instructions, instructionsLang, prompts, finish){
-    //See https://github.com/mscdex/ssh2#client-events
-    //name, instructions, instructionsLang don't seem to be of interest for authenticating
-    //prompts is an object of expected prompts and if they are to be shown to the user
-    //finish is the function to be called with an array of responses in the same order as 
-    //the prompts parameter defined them.
-    //See [Client events](https://github.com/mscdex/ssh2#client-events) for more information
-    //if a non-standard prompt results from a successful connection then handle its 
-  }
+   server:              {
+      host:         "IP Address",
+      port:         "external port number",
+      userName:     "user name",
+      password:     "user password",
+      passPhrase:   "privateKeyPassphrase",
+      privateKey:   require('fs').readFileSync('/path/to/private/key/id_rsa')    
+      //Optional: ssh2.connect config parameters
+      //See https://github.com/mscdex/ssh2#client-methods
+   },   
+   commands:            [],
+   standardPrompt:      ">$%#",
+   passwordPrompt:      ":",
+   passphrasePrompt:    ":",
+   showBanner:          false,
+   window:              false, //https://github.com/mscdex/ssh2#pseudo-tty-settings use {cols:200}
+   enter:               "\n",
+   streamEncoding:      "utf8",
+   asciiFilter:         "[^\r\n\x20-\x7e]", 
+   disableColorFilter:  false, 
+   textColorFilter:     "(\[{1}[0-9;]+m{1})", 
+   msg:                 function( message ) { process.stdout.write(message)},
+   verbose:             false,  
+   debug:               false,  
+   connectedMessage:    "Connected",
+   readyMessage:        "Ready",
+   closedMessage:       "Closed",
+   callback:            function( sessionText ){},
+   onFirstPrompt:       function() {},
+   onData:              function( data ) {},
+   onPipe:              function( writable ){},
+   onUnpipe:            function( writable ) {},
+   onCommandProcessing: function( response ) {},
+   onCommandComplete:   function( response ) {},
+   onEnd:               function( sessionText ) {},
+   onError:             function( err, type, close = false, callback ) {},
+   onKeyboardInteractive: function(name, instructions, instructionsLang, prompts, finish){}
     
 };
 ```
@@ -226,9 +149,8 @@ host = {
 
 Usage:
 ======
-
+__Terminal persistent shell connection.__
 ```javascript
-//Terminal persistent shell connection.
 
 var persistentShell = require('persistent-shell'),
     host = {
@@ -373,14 +295,14 @@ host = {
     server: {
         //other normal connection params,
         hashMethod:   "md5", //"md5" or "sha1"
-        //hostVerifier function must be defined and return true for match of false for failure.
+        //hostVerifier function must be defined and return true for match or false for failure.
         hostVerifier: function(hashedKey) {
-            var recievedHash;
+            var recievedHash,            
+               expectedHash = expectedHash + "".replace(/[:]/g, "").toLowerCase(),
+               recievedHash = hashedKey + "".replace(/[:]/g, "").toLowerCase();
             
-            expectedHash = expectedHash + "".replace(/[:]/g, "").toLowerCase();
-            recievedHash = hashedKey + "".replace(/[:]/g, "").toLowerCase();
             if (expectedHash === "") {
-              //No expected hash so save save what was received from the host (hashedKey)
+              //No expected hash so save what was received from the host (hashedKey)
               //serverHash needs to be defined before host object
               serverHash = hashedKey; 
               console.log("Server hash: " + serverHash);
@@ -389,6 +311,7 @@ host = {
               console.log("Hash values matched");
               return true;
             }
+            
             //Output the failed comparison to the console if you want to see what went wrong
             console.log("Hash values: Server = " + recievedHash + " <> Client = " + expectedHash);
             return false;
@@ -410,7 +333,9 @@ undesired results.__
 Keyboard-interactive
 ----------------------
 Keyboard-interactive authentication is available when both host.server.tryKeyboard is set to true and the event handler
-keyboard-interactive is defined as below. The keyboard-interactive event handler can only be used on the first connection.
+keyboard-interactive is defined as below. 
+
+The keyboard-interactive event handler can only be used on the first connection.
 
 Also see [test/keyboard-interactivetest.js](https://github.com/cmp-202/persistent-shell/blob/master/test/keyboard-interactivetest.js) for the full example 
 
