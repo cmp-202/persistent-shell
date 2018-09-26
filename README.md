@@ -51,25 +51,27 @@ _`this.host`_ Is the host object passed to the constructor.
 
 _`this.connection`_ Is the ssh2 connection client.
 
-_`this.commands`_ (Optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
+_`this.commands`_ (Optional) is array of commands.
+
+Commands are set using `host.commands = [commands]` or `this.runCommand([commands])`
 
 
 #### Commands:
 
-_`Instance = new persistentShell(host)`_ requires the host object defined above.
+_`Instance = new persistent-shell(host)`_ requires the host object defined above.
 
 _`this.connect(callback)`_ Connects using host.server properties running the callback when finished. Callback is optional.
 
-_`callback = function(sessionText){}`_. Runs after everything has closed allowing you to process the full session
-
 _`this.runCommand(command/s)`_ takes either a command string or an array of commands, in eaither case runs selected command.
+
+_`callback = function(sessionText){}`_. Runs after everything has closed allowing you to process the full session.
 
 
 #### Event Handlers: (All optional)
 
 _`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
 
-_`this.on("pipe",function(source){})`_ Allows you to bind a write stream to the connection shell stream read
+_`this.on("pipe",function(source){})`_ Allows you to bind a write stream to the shell stream.
 
 _`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
 
@@ -77,11 +79,11 @@ _`this.on("data", function(data){})`_ Runs every time data is received from the 
 
 _`this.on("commandProcessing", function(response){})`_ Runs with each data event before a prompt is detected.
 
-_`this.on("commandComplete", function(response){})`_ Runs when a prompt is detected after a command is sent.
+_`this.on("commandComplete", function(response){})`_ Runs when a prompt is detected after a command.
 
 _`this.on("end", function (sessionText){})`_ Runs when the stream/connection is being closed.
 
-_`this.on("msg", function(message){})`_ Output the message but with no carrage return. e.g. raw data received.
+_`this.on("msg", function(message){})`_ Output a message but with no carrage return.
 
 _`this.on("error", function(err, type, close = false, callback){})`_ Runs when an error occures.
 
