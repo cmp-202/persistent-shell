@@ -48,6 +48,10 @@ class SSH2Shell extends EventEmitter
          @_firstPrompt = false;
          @host.sessionText += @_buffer if @host.showBanner
          @_buffer = ""
+         if typeIsArray(@host.commands) and @host.commands.length > 0
+            @_nextCommand()
+      else
+         @.emit 'commandProcessing' , @command, @_buffer
          
    _commandComplete: =>
       response = @_buffer.replace(@command, "")
@@ -78,9 +82,7 @@ class SSH2Shell extends EventEmitter
          @.emit 'info', "#{@host.server.host}: running: #{@command}" if @host.verbose
          @command = command
          @_stream.write "#{@command}#{@host.enter}"
-         
-      
-   
+
    exit: =>
       @.emit 'info', "#{@host.server.host}: Exit command: Stream: close" if @host.debug
       @_stream.close() #"exit#{@host.enter}"
@@ -109,17 +111,15 @@ class SSH2Shell extends EventEmitter
       @_callback                = @host.callback if @host.callback
       @_pipes                   = []
 
-      @onCommandComplete        = @host.onCommandComplete ? ( command, response ) =>
+      @.on "commandProcessing", @host.onCommandProcessing ? ( response ) =>
+         @.emit 'info', "#{@host.server.host}: Class commandProcessing" if @host.debug
+    
+      @.on "commandComplete", @host.onCommandComplete ? ( response ) =>
          @.emit 'info', "#{@host.server.host}: Class commandComplete" if @host.debug
 
-      @onEnd                    = @host.onEnd ? ( sessionText ) =>
+      @.on "end", @host.onEnd ? ( sessionText ) =>
          @.emit 'info', "#{@host.server.host}: Class.end" if @host.debug
 
-      @.on "commandComplete", @onCommandComplete
-      @.on "end", @onEnd
-      
-      
-    
    constructor: (host) ->
       @host = host
       @connection = new require('ssh2')()

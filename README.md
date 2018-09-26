@@ -20,7 +20,9 @@ var host = {
       host:         "127.0.0.1",
       userName:     "test",
       password:     "1234",
- }
+   }
+   onFirstPrompt: function(){this.runCommand("la");}
+   onCommandComplete: function(response){this.exit();}
 };
 
 var persistent-shell = require ('persistent-shell'),
@@ -36,7 +38,7 @@ var persistent-shell = require ('persistent-shell'),
 //Start the process
 shell.connect(callback);
 
-//Your app calls `this.runCommand(command)` as required and `this.exit()` when finished.
+//Or your app calls `this.runCommand(command)` as required and `this.exit()` when finished.
 ``` 
 
 
@@ -44,13 +46,16 @@ API
 ---
 
 #### Properties:
+
 `this.host`      is the host object passed to the constructor.
 
 `this.connection` is the ssh2 connection client.
 
 `this.commands`  (optional) is array of commands, if any are set using `host.command or this.runCommand([commands])`
 
+
 #### Commands:
+
 `Instance = new persistentShell(host)` requires the host object defined above.
 
 `this.connect(callback)` Connects using host.server properties running the callback when finished. Callback is optional.
@@ -59,15 +64,20 @@ API
 
 `this.runCommand(command/s)` takes either a command string or an array of commands, in eaither case runs selected command.
 
+
 #### Event Handlers: (All optional)
-`this.on(
+
+`this.on("unpipe", function(source){})` Runs when a pipe is removed.
+
 `this.on("pipe",function(source){})` Allows you to bind a write stream to the connection shell stream read
 
 `this.on("unpipe", function(source){})` Runs when a pipe is removed.
 
 `this.on("data", function(data){})` Runs every time data is received from the host.
 
-`this.on("commandComplete", function(command, response){})` Runs when a prompt is detected after a command is sent.
+`this.on("commandProcessing", function(response){})` Runs with each data event before a prompt is detected.
+
+`this.on("commandComplete", function(response){})` Runs when a prompt is detected after a command is sent.
 
 `this.on("end", function (sessionText){})` Runs when the stream/connection is being closed.
 
@@ -141,42 +151,32 @@ host = {
   
   //Host event handlers 
   
-  //Optional: Keyboard interactive authentication event handler
-      //This event is only used for the first host connecting through ssh2.connect
-      //Required if the first host.server.tryKeyboard is set to true. 
-  onKeyboardInteractive: function(name, instructions, instructionsLang, prompts, finish){
-    //See https://github.com/mscdex/ssh2#client-events
-    //name, instructions, instructionsLang don't seem to be of interest for authenticating
-    //prompts is an object of expected prompts and if they are to be shown to the user
-    //finish is the function to be called with an array of responses in the same order as 
-    //the prompts parameter defined them.
-    //See [Client events](https://github.com/mscdex/ssh2#client-events) for more information
-    //if a non-standard prompt results from a successful connection then handle its 
-  },
   //Optional: identifies when the stream is available and the first prompt is ready for input.
-  onFirstPrompt: function(){}
+  onFirstPrompt: function(){},
   
   //Optional: data is triggered on every stream data event providing the raw stream output 
   onData: function( data ) {
     //data is the string received.
   },
   
-  //Optional: The pipe event is raised when readStream.pipe() adds a writeable stream to 
-  //receive output
+  //Optional: The pipe event is raised when readStream.pipe() adds a writeable stream.
   onPipe: function( source ) {
     //source is the read stream the write stream will receive output from
-  }
+  },
   
-  //Optional: The unpipe event is raised when readStream.unpipe() removes a writeable stream 
-  //so it no longer receives output
+  //Optional: The unpipe event is raised when readStream.unpipe() removes a write stream.
   onUnpipe: function( source ) {
     //source is the read stream to remove from being able to write its output.
   },
   
-  //Optional: Command complete is raised when a standard prompt is detected after a command is sent.
-  onCommandComplete:   function( command, response ) {
+  //Optional: Command processing is raised for data events where a standard prompt is not detected.
+  onCommandProcessing:   function( response ) {
    //response is the full string from the last command up to the command prompt.
-   //host is the host object.
+  },
+  
+  //Optional: Command complete is raised when a standard prompt is detected after a command is sent.
+  onCommandComplete:   function( response ) {
+   //response is the full string from the last command up to the command prompt.
   },
   
   //Optional: The end event is raised when the stream.on ("finish") event is triggered as the 
@@ -200,7 +200,21 @@ host = {
   callback:           function( sessionText ){
     //sessionText is the full session response filtered and notifications added
     //Is overridden by persistent-shell.connect(callback)
-  }  
+  },
+  
+  //Optional: Keyboard interactive authentication event handler
+      //This event is only used for the first host connecting through ssh2.connect
+      //Required if the first host.server.tryKeyboard is set to true. 
+  onKeyboardInteractive: function(name, instructions, instructionsLang, prompts, finish){
+    //See https://github.com/mscdex/ssh2#client-events
+    //name, instructions, instructionsLang don't seem to be of interest for authenticating
+    //prompts is an object of expected prompts and if they are to be shown to the user
+    //finish is the function to be called with an array of responses in the same order as 
+    //the prompts parameter defined them.
+    //See [Client events](https://github.com/mscdex/ssh2#client-events) for more information
+    //if a non-standard prompt results from a successful connection then handle its 
+  }
+    
 };
 ```
 * Host.server will accept current [SSH2.client.connect parameters](https://github.com/mscdex/ssh2#client-methods).
