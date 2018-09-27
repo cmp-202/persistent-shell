@@ -12,88 +12,56 @@ Installation:
 npm install persistent-shell
 ```
 
-
-Minimal Example:
-------------
-```javascript
-//host configuration with connection settings and commands
-var host = {
-   server:        {     
-      host:         "127.0.0.1",
-      userName:     "test",
-      password:     "1234",
-   }
-   onFirstPrompt: function(){this.runCommand("la");}
-   onCommandComplete: function(response){this.exit();}
-};
-
-var persistent-shell = require ('persistent-shell'),
-
-  //Create a new instance passing in the host object
-  shell = new persistent-shell(host),
-  
-  //Use a callback function to process the full session text
-  callback = function(sessionText){
-    process.stdout.write(sessionText)
-  }
-
-//Start the process
-shell.connect(callback);
-
-//Or your app calls `this.runCommand(command)` as required and `this.exit()` when finished.
-``` 
-
-
 API
 ---
 
 #### Properties:
 
-_`this.host`_ Is the host object passed to the constructor.
+__`this.host`__ Is the host object passed to the constructor.
 
-_`this.connection`_ Is the ssh2 connection client.
+__`this.commands`__ (Optional) is array of commands.
 
-_`this.commands`_ (Optional) is array of commands.
-
-Commands are set using `host.commands = [commands]` or `this.runCommand([commands])`
+Commands are set using `host.commands = [commands]` or `this.runCommand([commands])`.
 
 
 #### Commands:
 
-_`Instance = new persistent-shell(host)`_ requires the host object defined above.
+__`Instance = new persistent-shell(host)`__ requires the host object defined above.
 
-_`this.connect(callback)`_ Connects using host.server properties running the callback when finished. Callback is optional.
+__`this.connect(callback)`__ Connects using host.server properties running the callback when finished. Callback is optional.
 
-_`this.runCommand(command/s)`_ takes either a command string or an array of commands, in eaither case runs selected command.
+__`this.runCommand(command/s)`__ takes a command or an array of commands. Runs command or first command in array.
 
-_`callback = function(sessionText){}`_. Runs after everything has closed allowing you to process the full session.
+__`callback = function(sessionText){}`__ Runs after everything has closed allowing you to process the full session.
 
 
 #### Event Handlers: (All optional)
 
-_`this.on("pipe",function(source){})`_ Allows you to bind a write stream to the shell stream.
+__`this.on("pipe",function(source){})`__ Allows you to bind a write stream to the shell stream.
 
-_`this.on("unpipe", function(source){})`_ Runs when a pipe is removed.
+__`this.on("unpipe", function(source){})`__ Runs when a pipe is removed.
 
-_`this.on("data", function(data){})`_ Runs every time data is received from the host.
+__`this.on("data", function(data){})`__ Runs every time data is received from the host.
 
-_`this.on("commandProcessing", function(response){})`_ Runs with each data event before a prompt is detected.
+__`this.on("commandProcessing", function(response){})`__ Runs with each data event before a prompt is detected.
 
-_`this.on("commandComplete", function(response){})`_ Runs when a prompt is detected after a command.
+__`this.on("commandComplete", function(response){})`__ Runs when a prompt is detected after a command.
 
-_`this.on("end", function (sessionText){})`_ Runs when the stream/connection is being closed.
+__`this.on("end", function (sessionText){})`__ Runs when the stream/connection is being closed.
 
-_`this.on("msg", function(message){})`_ Output a message but with no carrage return.
+__`this.on("msg", function(message){})`__ Output a message but with no carrage return.
 
-_`this.on("error", function(err, type, close = false, callback){})`_ Runs when an error occures.
+__`this.on("info", function(message){})`__ Emit msg with carrage return. Host.onInfo is not available.
 
-_`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`_ keyboard-interactive requires host.server.tryKeyboard to be set.
+__`this.on("error", function(err, type, close = false, callback){})`__ Runs when an error occures.
+
+__`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`__ keyboard-interactive requires host.server.tryKeyboard to be set.
 
 
 Host Configuration:
 ------------
 
-persistent-shell expects an object with the following structure to be passed to its constructor:
+Persistent-shell expects an object with the following structure to be passed to its constructor:
 
 __*Note:* Any property or event handler with a default value does not need to be added
 to your host object unless you want to change it.__
@@ -148,10 +116,11 @@ host = {
 * The `this` keyword is available within host event handlers to give access to persistent-shell functions and properties.
 * `this.host` or host variable passed into a function provides access to all the host config, some instance
   variables.
+  
+Example:
+--------
 
-Usage:
-======
-__Terminal persistent shell connection.__
+__Persistent shell for manually entering cammands from a terminal session.__
 ```javascript
 
 var persistentShell = require('persistent-shell'),
@@ -162,32 +131,30 @@ var persistentShell = require('persistent-shell'),
         userName:     "user",
         password:     "password"
       },
-      debug:          false,
-      verbose:        false,
+      //stdin stream to receive input through
       stdin:          process.openStdin()
    };
 
 //Create new instance
 var session = new persistentShell(host),
    callback = function( sessionText ){
-         this.emit("info", "-----Callback\nSession text:\n\n" + sessionText);
-         this.emit("info", "\n\n-----Callback end" );
-   }
+      this.emit("info", "-----Session text:\n\n" + sessionText + "\n\n-----" );
       
-//Start console data event handler
+//listen for stdin data to write to the host
 session.host.stdin.addListener("data", function(input){
-      var command = input.toString().trim();
-      if (command == "exit"){
-         session.host.stdin.end();
-         session.exit();
-      }else {
-         session.runCommand(command);
-      }
-})
+   var command = input.toString().trim();
+   if (command == "exit"){
+      session.host.stdin.end();
+      session.exit();
+   }else {
+      session.runCommand(command);
+   }
+});
 
 //Make connection
 session.connect(callback);
 ```
+
 
 Trouble shooting:
 -----------------
@@ -200,14 +167,14 @@ Trouble shooting:
 * I did read of people having problems with the pass phrase or password having an \n added when used from an
   external file causing it to fail. They had to add .trim() when setting it.
 * If your password is incorrect the connection will return an error.
-* There is an optional debug setting in the host object that will output process information when set to true. `host.debug = true`
+* There is an optional debug setting in the host object that will output process information when set to true.
+  - `host.debug = true`
 
 
 Verbose and Debug:
 ------------------
-* When host.verbose is set to true each command complete raises a msg event outputting the command response text.
-* When host.debug is set to true each process step raises a msg event to help identify what the internal process of
-  each step was.
+* When `host.verbose = true` outputs each commands response.
+* When `host.debug = true` outputs each process step.
 
   
 Authentication:
@@ -215,8 +182,8 @@ Authentication:
 * When using key authentication you may require a valid pass phrase if your key was created with one.
 * When using fingerprint validation both host.server.hashMethod property and host.server.hostVerifier function must be
   set.
-* When using keyboard-interactive authentication both host.server.tryKeyboard and instance.on ("keayboard-interactive",
-  function...) or host.onKeyboardInteractive() must be defined.
+* When using keyboard-interactive authentication both `host.server.tryKeyboard` and `instance.on ("keayboard-interactive",
+  function...)` or `host.onKeyboardInteractive()` must be defined.
 * Set the default cyphers and keys.
 
 
@@ -224,7 +191,7 @@ Default Cyphers:
 ---------------
 Default Cyphers and Keys used in the initial ssh connection can be redefined by setting the ssh2.connect.algorithms through the host.server.algorithms option. 
 
-As with this property all ssh2.connect properties are set in the host.server object.
+As with this property all `ssh2.connect properties` are set in the `host.server` object.
 
 *Example:*
 ```javascript
