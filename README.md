@@ -24,7 +24,7 @@ __`this.commands`__ (Optional) is array of commands.
 Commands are set using `host.commands = [commands]` or `this.runCommand([commands])`.
 
 
-#### Commands:
+#### Functions:
 
 __`Instance = new persistent-shell(host)`__ requires the host object defined above.
 
@@ -37,9 +37,9 @@ __`callback = function(sessionText){}`__ Runs after everything has closed allowi
 
 #### Event Handlers: (All optional)
 
-__`this.on("pipe",function(source){})`__ Allows you to bind a write stream to the shell stream.
+__`this.on("pipe",function(writeStream){})`__ Allows you to bind a write stream to the shell stream.
 
-__`this.on("unpipe", function(source){})`__ Runs when a pipe is removed.
+__`this.on("unpipe", function(writeStream){})`__ Runs when a pipe is removed.
 
 __`this.on("data", function(data){})`__ Runs every time data is received from the host.
 
@@ -51,11 +51,12 @@ __`this.on("end", function (sessionText){})`__ Runs when the stream/connection i
 
 __`this.on("msg", function(message){})`__ Output a message but with no carrage return.
 
-__`this.on("info", function(message){})`__ Emit msg with carrage return. Host.onInfo is not available.
+__`this.on("info", function(message){})`__ Emits msg with carrage return. `Host.onInfo` is not available modify msg instead.
 
 __`this.on("error", function(err, type, close = false, callback){})`__ Runs when an error occures.
 
-__`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`__ keyboard-interactive requires host.server.tryKeyboard to be set.
+__`this.on("keyboard-interactive", function(name, instructions, instructionsLang, prompts, finish){})`__ 
+Keyboard-interactive authentication requires host.server.tryKeyboard to be set.
 
 
 Host Configuration:
