@@ -6,20 +6,19 @@
 typeIsArray = Array.isArray || ( value ) -> return {}.toString.call( value ) is '[object Array]'
 EventEmitter = require('events').EventEmitter
 
-class SSH2Shell extends EventEmitter
-   host:           {}
+class PersistentShell extends EventEmitter
+   host:             {}
    command:          ""
    _stream:          {}
    _data:            ""
    _buffer:          ""
-   _firstPrompt:      true
-   asciiFilter:      ""
-   textColorFilter:  ""
-   onEnd:            =>
-   pipe:  (destination)=>
-      @_pipes.push(destination)
+   _firstPrompt:     true
+   _asciiFilter:      ""
+   _textColorFilter:  ""
+   _pipes:           []
+   pipe:  (writable)=>
+      @_pipes.push(writable)
       return @
-   unpipe:           =>
    
    _processData: ( data )=>
       #remove test coloring from responses like [32m[31m
@@ -109,7 +108,6 @@ class SSH2Shell extends EventEmitter
       @textColorFilter          = new RegExp(@host.textColorFilter,"g") unless @textColorFilter
       @standardPromt            = new RegExp("[" + @host.standardPrompt + "]\\s?$") unless @standardPromt
       @_callback                = @host.callback if @host.callback
-      @_pipes                   = []
 
       @.on "commandProcessing", @host.onCommandProcessing ? ( response ) =>
          @.emit 'info', "#{@host.server.host}: Class commandProcessing" if @host.debug
@@ -159,10 +157,10 @@ class SSH2Shell extends EventEmitter
       @.on "firstPrompt", @host.onFirstPrompt ? =>
          @.emit 'info', "#{@host.server.host}: Class.shell ready" if @host.debug
          
-      @.on "pipe", @host.onPipe ? (source) =>
+      @.on "pipe", @host.onPipe ? (writable) =>
          @.emit 'info', "#{@host.server.host}: Class.pipe" if @host.debug
 
-      @.on "unpipe", @host.onUnpipe ? (source) =>
+      @.on "unpipe", @host.onUnpipe ? (writable) =>
          @.emit 'info', "#{@host.server.host}: Class.unpipe" if @host.debug 
 
       @.on "data", @host.onData ? (data) =>
@@ -172,7 +170,7 @@ class SSH2Shell extends EventEmitter
          console.error data
 
    connect: (callback)=>
-      @_callback = callback if callback
+      @_callback = @host.callback unless callback
       @_initiate()
       @_connect()
     
@@ -277,4 +275,4 @@ class SSH2Shell extends EventEmitter
       return @_stream
 
   
-module.exports = SSH2Shell
+module.exports = PersistentShell
