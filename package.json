@@ -8,11 +8,11 @@
     "node": ">=4.5.0"
   },
   "dependencies": {
-    "npm": "^6.4.1",
     "ssh2": ">=0.5.0"
   },
   "devDependencies": {
-    "coffee-script": ">=1.10.0"
+    "coffee-script": ">=1.10.0",
+    "dotenv": ">=2.0.0"
   },
   "scripts": {},
   "keywords": [
