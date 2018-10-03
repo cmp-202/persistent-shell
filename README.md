@@ -118,44 +118,45 @@ host = {
 * `this.host` or host variable passed into a function provides access to all the host config, some instance
   variables.
   
-Example:
+Examples:
 --------
+__Persistent connection using both batch commands on connection and user input via the terminal__
 
-__Persistent shell for manually entering cammands from a terminal session.__
 ```javascript
-
-var persistentShell = require('persistent-shell'),
-    host = {
+var persistent-shell = require (persistent-shell),
+   commands = ["cd /home", "la", "cd user", "la", "ifconfig"],
+   host = {
       server: {     
-        host:         "192.168.0.1",
-        port:         "22",
-        userName:     "user",
-        password:     "password"
-      },
-      //stdin stream to receive input through
-      stdin:          process.openStdin()
-   };
-
-//Create new instance
-var session = new persistentShell(host),
-   callback = function( sessionText ){
-      this.emit("info", "-----Session text:\n\n" + sessionText + "\n\n-----" );
+         host:         "192.168.0.1",
+         port:         "22",
+         userName:     "user",
+         password:     "password"
+      },      
+      //Commands can be set here or when using .runCommand(command/s).
+      commands:       commands,
       
-//listen for stdin data to write to the host
-session.host.stdin.addListener("data", function(input){
-   var command = input.toString().trim();
-   if (command == "exit"){
-      session.host.stdin.end();
-      session.exit();
-   }else {
-      session.runCommand(command);
-   }
-});
+      //First prompt detected and the stream is ready.
+      onFirstPrompt:    function(){
+         this.stdin = process.openStdin();         
+         var self = this;
+         
+         //Receive stdin data
+         this.stdin.addListener("data", function(data){
+            var command = data.toString().trim();
+            if (command == "exit"){
+               self.stdin.end();
+               self.exit();
+            }else {
+               self.runCommand(command);
+            }
+         })
+      }
+   },
+   session = new persistentShell(host);
 
 //Make connection
-session.connect(callback);
+session.connect();
 ```
-
 
 Trouble shooting:
 -----------------
