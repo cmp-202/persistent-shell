@@ -7,18 +7,15 @@ typeIsArray = Array.isArray || ( value ) -> return {}.toString.call( value ) is 
 EventEmitter = require('events').EventEmitter
 
 class PersistentShell extends EventEmitter
-   host:             {}
-   command:          ""
-   _stream:          {}
-   _data:            ""
-   _buffer:          ""
-   _firstPrompt:     true
-   _asciiFilter:      ""
-   _textColorFilter:  ""
-   _pipes:           []
-   pipe:  (writable)=>
-      @_pipes.push(writable)
-      return @
+   host:               {}
+   command:            ""
+   _stream:            {}
+   _data:              ""
+   _buffer:            ""
+   _firstPrompt:       true
+   _asciiFilter:       ""
+   _textColorFilter:   ""
+   _pipes:             []
    
    _processData: ( data )=>
       #remove test coloring from responses like [32m[31m
@@ -48,6 +45,7 @@ class PersistentShell extends EventEmitter
          @host.sessionText += @_buffer if @host.showBanner
          @_buffer = ""
          if typeIsArray(@host.commands) and @host.commands.length > 0
+            @emit 'info', "#{@host.server.host}: First prompt run commands" if @host.debug
             @_nextCommand()
       else
          @.emit 'commandProcessing' , @command, @_buffer
@@ -62,6 +60,7 @@ class PersistentShell extends EventEmitter
       @.emit 'info', "#{@host.server.host}: Raising commandComplete event" if @host.debug
       @.emit 'commandComplete', @command, response
       if typeIsArray(@host.commands) and @host.commands.length > 0
+         @emit 'info', "#{@host.server.host}: Command complete run commands" if @host.debug
          @_nextCommand()
 
    _nextCommand: =>
@@ -76,7 +75,8 @@ class PersistentShell extends EventEmitter
          @host.commands = command
          @_nextCommand
       else
-         if @command == "exit"
+         if command.indexOf("exit") > -1
+            @.emit 'info', "#{@host.server.host}: exiting" if @host.debug
             @exit()
          @.emit 'info', "#{@host.server.host}: running: #{@command}" if @host.verbose
          @command = command
@@ -104,28 +104,31 @@ class PersistentShell extends EventEmitter
       @host.streamEncoding    = @host.streamEncoding ? "utf8"
       @host.window            = true unless @host.window
       @host.pty               = true unless @host.pty
-      @asciiFilter              = new RegExp(@host.asciiFilter,"g") unless @asciiFilter
-      @textColorFilter          = new RegExp(@host.textColorFilter,"g") unless @textColorFilter
-      @standardPromt            = new RegExp("[" + @host.standardPrompt + "]\\s?$") unless @standardPromt
-      @_callback                = @host.callback if @host.callback
-
-      @.on "commandProcessing", @host.onCommandProcessing ? ( response ) =>
-         @.emit 'info', "#{@host.server.host}: Class commandProcessing" if @host.debug
-    
-      @.on "commandComplete", @host.onCommandComplete ? ( response ) =>
-         @.emit 'info', "#{@host.server.host}: Class commandComplete" if @host.debug
-
-      @.on "end", @host.onEnd ? ( sessionText ) =>
-         @.emit 'info', "#{@host.server.host}: Class.end" if @host.debug
-
-   constructor: (host) ->
-      @host = host
+      @asciiFilter            = new RegExp(@host.asciiFilter,"g") unless @asciiFilter
+      @textColorFilter        = new RegExp(@host.textColorFilter,"g") unless @textColorFilter
+      @standardPromt          = new RegExp("[" + @host.standardPrompt + "]\\s?$") unless @standardPromt
+      @_callback              = @host.callback if @host.callback
+      
+   constructor: (@host) ->
       @connection = new require('ssh2')()
     
    _initiate: =>
       @.emit 'info', "#{@host.server.host}: initiate" if @host.debug
       @_loadDefaults()
+      
       #event handlers
+      @.on "firstPrompt", @host.onFirstPrompt ? () =>
+         @.emit 'info', "#{@host.server.host}: Class.shell ready" if @host.debug
+         
+      @.on "commandProcessing", @host.onCommandProcessing ? ( response ) =>
+         @.emit 'info', "#{@host.server.host}: Class commandProcessing" if @host.debug
+         
+      @.on "commandComplete", @host.onCommandComplete ? ( response ) =>
+         @.emit 'info', "#{@host.server.host}: Class commandComplete" if @host.debug
+
+      @.on "end", @host.onEnd ? ( sessionText ) =>
+         @.emit 'info', "#{@host.server.host}: Class.end" if @host.debug
+            
       @.on "keyboard-interactive", ( name, instructions, instructionsLang, prompts, finish ) =>
          @.emit 'info', "#{@host.server.host}: Class.keyboard-interactive" if @host.debug
          @.emit 'info', "#{@host.server.host}: Keyboard-interactive: 
@@ -137,7 +140,7 @@ class PersistentShell extends EventEmitter
             @.emit 'info', "Prompts object: " + str
          @host.onKeyboardInteractive name, instructions, instructionsLang, prompts, finish if @host.onKeyboardInteractive
 
-      #terminal output doesn't want a `\n` but process info messages do.
+      #terminal output doesn't want a `\n` but process info messages does.
       @.on "msg", @host.msg  ?  ( message ) =>
          process.stdout.write  message
          
@@ -153,12 +156,11 @@ class PersistentShell extends EventEmitter
             callback(err, type) if callback
             if close 
                @connection.end()
-
-      @.on "firstPrompt", @host.onFirstPrompt ? =>
-         @.emit 'info', "#{@host.server.host}: Class.shell ready" if @host.debug
          
       @.on "pipe", @host.onPipe ? (writable) =>
          @.emit 'info', "#{@host.server.host}: Class.pipe" if @host.debug
+         @_pipes.push(writable)
+         return @
 
       @.on "unpipe", @host.onUnpipe ? (writable) =>
          @.emit 'info', "#{@host.server.host}: Class.unpipe" if @host.debug 

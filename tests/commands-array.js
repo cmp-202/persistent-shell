@@ -4,40 +4,34 @@ var dotenv = require('dotenv');
 dotenv.load();
 
 var persistentShell = require ('../lib/persistent-shell'),
-    host = {
-      server:             {     
+   commands = ["cd /home", "la", "cd user", "la", "ifconfig"],
+   host = {
+      server: {     
          host:         process.env.HOST,
          port:         process.env.PORT,
          userName:     process.env.USER_NAME,
          password:     process.env.PASSWORD
       },
-      debug:          false,
-      verbose:        false,
-      stdin:          process.openStdin(),
-      onCommandComplete: function(command, response){
-         if (command == "echo hi"){
-            this.host.commands = ["cd /home", "ifconfig","la"];
-            this._nextCommand();
-         }
+      //Commands can be set here or when using .runCommand(command/s).
+      commands:       commands,
+      
+      //First prompt detected and the stream is ready.
+      onFirstPrompt:    function(){
+         this.stdin = process.openStdin();
+         //Receive stdin data
+         var self = this;
+         this.stdin.addListener("data", function(data){
+            var command = data.toString().trim();
+            if (command == "exit"){
+               self.stdin.end();
+               self.exit();
+            }else {
+               self.runCommand(command);
+            }
+         })
       }
    },
-   session = new persistentShell(host),
-   callback = function( sessionText ){
-         this.emit("info", "-----Callback\nSession text:\n\n" + sessionText);
-         this.emit("info", "\n\n-----Callback end" );
-   };
-      
-//Start console data event handler
-session.host.stdin.addListener("data", function(input){
-      var command = input.toString().trim();
-      if (command == "exit"){
-         session.host.stdin.end();
-         session.exit();
-      }else {
-         session.runCommand(command);
-      }
-})
+   session = new persistentShell(host);
 
 //Make connection
-session.connect(callback)
-
+session.connect();
