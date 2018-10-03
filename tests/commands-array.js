@@ -1,4 +1,4 @@
-//Terminal persistent shell connection.
+//Persistent shell connection with automated commands and terminal.
 
 var dotenv = require('dotenv');
 dotenv.load();
@@ -33,5 +33,8 @@ var persistentShell = require ('../lib/persistent-shell'),
    },
    session = new persistentShell(host);
 
+//Handle ctrl-c to terminate the running command on the host
+process.on('SIGINT', function() {session.runCommand('\x03')});
+
 //Make connection
-session.connect();
+session.connect(); 

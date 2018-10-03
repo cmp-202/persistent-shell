@@ -62,6 +62,8 @@ class PersistentShell extends EventEmitter
       if typeIsArray(@host.commands) and @host.commands.length > 0
          @emit 'info', "#{@host.server.host}: Command complete run commands" if @host.debug
          @_nextCommand()
+      else
+         @emit 'lastCommand', @command
 
    _nextCommand: =>
       #process the next command if there are any      
@@ -74,6 +76,9 @@ class PersistentShell extends EventEmitter
       if typeIsArray(command) 
          @host.commands = command
          @_nextCommand
+      else if command == '\x03'
+         @.emit 'info', "#{@host.server.host}: sending ctrl-c" if @host.debug
+         @_stream.write '\x03'
       else
          if command.indexOf("exit") > -1
             @.emit 'info', "#{@host.server.host}: exiting" if @host.debug
@@ -126,6 +131,9 @@ class PersistentShell extends EventEmitter
       @.on "commandComplete", @host.onCommandComplete ? ( response ) =>
          @.emit 'info', "#{@host.server.host}: Class commandComplete" if @host.debug
 
+      @.on "lastCommand", @host.onLastCommand ? ( command ) =>
+         @.emit 'info', "#{@host.server.host}: Class.lastCommand" if @host.debug
+         
       @.on "end", @host.onEnd ? ( sessionText ) =>
          @.emit 'info', "#{@host.server.host}: Class.end" if @host.debug
             

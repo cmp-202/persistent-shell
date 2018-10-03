@@ -47,6 +47,8 @@ __`this.on("commandProcessing", function(response){})`__ Runs with each data eve
 
 __`this.on("commandComplete", function(response){})`__ Runs when a prompt is detected after a command.
 
+__`this.on("lastCommand", function(message){})`__ Indicates there are no commands in the commands array.
+
 __`this.on("end", function (sessionText){})`__ Runs when the stream/connection is being closed.
 
 __`this.on("msg", function(message){})`__ Output a message but with no carrage return.
@@ -105,6 +107,7 @@ host = {
    onUnpipe:            function( writable ) {},
    onCommandProcessing: function( response ) {},
    onCommandComplete:   function( response ) {},
+   onLastCommand:       function( command ) {},
    onEnd:               function( sessionText ) {},
    onError:             function( err, type, close = false, callback ) {},
    onKeyboardInteractive: function(name, instructions, instructionsLang, prompts, finish){}
@@ -118,7 +121,7 @@ host = {
 * `this.host` or host variable passed into a function provides access to all the host config, some instance
   variables.
   
-Examples:
+Example:
 --------
 __Persistent connection using both batch commands on connection and user input via the terminal__
 
@@ -153,6 +156,9 @@ var persistent-shell = require (persistent-shell),
       }
    },
    session = new persistentShell(host);
+
+//Handle ctrl-c to terminate the running command on the host
+process.on('SIGINT', function() {session.runCommand('\x03')});
 
 //Make connection
 session.connect();
