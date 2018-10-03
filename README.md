@@ -307,8 +307,6 @@ keyboard-interactive is defined as below.
 
 The keyboard-interactive event handler can only be used on the first connection.
 
-Also see [test/keyboard-interactivetest.js](https://github.com/cmp-202/persistent-shell/blob/master/test/keyboard-interactivetest.js) for the full example 
-
 *Defining the event handler:*
 ```javascript
 //this is required
