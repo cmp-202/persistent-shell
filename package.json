@@ -1,6 +1,6 @@
 {
   "name": "persistent-shell",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "author": "cmp-202",
   "description": "A wrapper class for ssh2 to run a persistent shell session",
   "main": "./lib/persistent-shell.js",
