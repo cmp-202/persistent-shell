@@ -3,6 +3,7 @@
   "version": "0.0.9",
   "author": "cmp-202",
   "description": "A wrapper class for ssh2 to run a persistent shell session",
+  "deprecated": "Unmaintained and broken with ssh2 >= 1.0.0 (it calls new require('ssh2')(), which is not a constructor). Use ssh2shell 4.x (https://www.npmjs.com/package/ssh2shell) or ssh2 directly.",
   "main": "./lib/persistent-shell.js",
   "engines": {
     "node": ">=4.5.0"

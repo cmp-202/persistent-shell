@@ -1,3 +1,18 @@
+> [!WARNING]
+> **This package is deprecated and unmaintained.**
+>
+> `persistent-shell` is broken with the dependency it declares (`ssh2 >= 1.4.0`):
+> it calls `new require('ssh2')()`, but ssh2 1.x exports `{ Client, ... }`
+> rather than a constructor, so constructing a session throws
+> `TypeError: ... is not a function`. The project has had no activity since 2022.
+>
+> Use [`ssh2shell`](https://www.npmjs.com/package/ssh2shell) 4.x, or
+> [`ssh2`](https://www.npmjs.com/package/ssh2) directly, instead.
+>
+> All versions are deprecated on npm.
+
+---
+
 persistent-shell
 =========
 
